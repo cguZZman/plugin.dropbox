@@ -1,15 +1,24 @@
-# Google Drive KODI Addon
-Google Drive for KODI
+# Dropbox for Kodi
 
-Play all your media from Google Drive including Videos, Music and Pictures. 
-* Unlimited accounts
-* Playback your music and videos. Listing of videos with thumbnails.
-* Use Google Drive as a source.
-* Subtitles can be assigned automatically if a .str file exists with the same name as the video. 
-* Export your videos to your library (.strm files). You can export your music too, but kodi won't support it yet. It's a Kodi issue for now.
-* Show your photos individually or run a slideshow of them. Listing of pictures with thumbnails.
-* Auto-Refreshed slideshow.
-* Use of OAuth 2 login. You don't have to write your user/password within the add-on. Use the login process in your browser.
-* Extremely fast. Using the Google Drive API
+Browse your Dropbox in Kodi and play your videos, music and pictures.
 
-This program is not affiliated with or sponsored by Google.
+- Any number of Dropbox accounts
+- Search your Dropbox
+- Subtitles stored next to your videos are loaded automatically (same name, e.g. `movie.mkv` and `movie.srt` or `movie.en.srt`)
+- Export videos and music to the Kodi library (.strm files)
+- Use Dropbox as a source
+- Read-only: the add-on never changes or deletes your files
+
+## Signing in
+
+The add-on shows a short code and a QR code. On a phone or computer on the same network as Kodi, open the address shown (https://drive.signinserver.com), enter the code and sign in with Dropbox. The sign-in service is open source: https://github.com/cguZZman/signin-server.
+
+Files are streamed directly between Dropbox and your Kodi device; they never pass through the sign-in service.
+
+## Requirements
+
+Kodi 19 (Matrix) or later, and the Cloud Drive Common Module (`script.module.clouddrive.common`), installed automatically.
+
+## License
+
+GPL-3.0-or-later. This add-on is not affiliated with or endorsed by Dropbox.
