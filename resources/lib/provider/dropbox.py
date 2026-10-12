@@ -22,6 +22,7 @@ import posixpath
 import urllib
 
 from clouddrive.common.remote.provider import Provider
+from clouddrive.common.ui.logger import Logger
 from clouddrive.common.utils import Utils
 
 
@@ -143,18 +144,23 @@ class Dropbox(Provider):
                 on_items_page_completed(page)
             items.extend(page)
             pages += 1
-            more = Utils.get_safe_value(response, 'has_more') and pages < self._MAX_SEARCH_PAGES
+            more = Utils.get_safe_value(response, 'has_more')
+            if more and pages >= self._MAX_SEARCH_PAGES:
+                Logger.notice('Search for "%s" stopped after %d results; Dropbox has more matches.' % (Utils.str(query), len(items)))
+                more = False
             response = self._rpc('/files/search/continue_v2', {'cursor': response['cursor']}) if more else None
         return items
 
     def get_subtitles(self, parent, name, item_driveid=None, include_download_info=False):
-        # Subtitle files in the same folder whose name starts with the video's name, e.g. "movie.srt" or "movie.en.srt".
+        # Subtitle files in the same folder named after the video, e.g. "movie.srt" or "movie.en.srt" (not "movie2.srt").
         if parent is None:
             return []
-        base = Utils.remove_extension(name).lower()
+        prefix = Utils.remove_extension(name).lower() + '.'
         subtitles = []
-        for item in self._list_folder(self._api_path(None, parent), None, include_download_info=include_download_info):
-            if 'folder' not in item and item['name'].lower().startswith(base) and Utils.default(item['name_extension'], '').lower() in self._SUBTITLE_EXTENSIONS:
+        # None when the operation was cancelled.
+        items = self._list_folder(self._api_path(None, parent), None, include_download_info=include_download_info) or []
+        for item in items:
+            if 'folder' not in item and item['name'].lower().startswith(prefix) and Utils.default(item['name_extension'], '').lower() in self._SUBTITLE_EXTENSIONS:
                 subtitles.append(item)
         return subtitles
 
