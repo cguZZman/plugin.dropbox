@@ -40,6 +40,16 @@ Inicia sesión desde tu teléfono o computadora con un código corto que muestra
 - Somente leitura: o add-on nunca altera nem exclui seus arquivos
 Entre na conta pelo celular ou computador com um código curto mostrado no Kodi.</description>
 		<disclaimer lang="pt_BR">Este add-on não é afiliado ao Dropbox nem endossado por ele.</disclaimer>
+		<summary lang="sv_SE">Spela upp dina videor, din musik och dina bilder från Dropbox</summary>
+		<description lang="sv_SE">Bläddra i din Dropbox i Kodi och spela upp dina videor, din musik och dina bilder.
+- Valfritt antal Dropbox-konton
+- Sök i din Dropbox
+- Undertexter som sparats bredvid dina videor läses in automatiskt
+- Exportera videor och musik till Kodi-biblioteket (.strm-filer)
+- Använd Dropbox som källa
+- Endast läsning: tillägget ändrar eller tar aldrig bort dina filer
+Logga in från din telefon eller dator med en kort kod som visas i Kodi.</description>
+		<disclaimer lang="sv_SE">Det här tillägget är inte anslutet till eller godkänt av Dropbox.</disclaimer>
 		<license>GPL-3.0-or-later</license>
 		<source>https://github.com/cguZZman/plugin.dropbox</source>
 		<forum>https://github.com/cguZZman/plugin.dropbox/issues</forum>
