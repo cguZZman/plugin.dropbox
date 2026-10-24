@@ -46,6 +46,8 @@ class Dropbox(Provider):
 
     revoke_supported = True
     signin_company = 'Dropbox'
+    # Revoking ends only this device's sign-in: other devices have their own refresh tokens.
+    revoke_ends_all_sign_ins = False
 
     def revoke_access(self):
         # Disables the access token, the refresh token it came from, and every access token issued with it.
