@@ -44,6 +44,15 @@ class Dropbox(Provider):
         # No default Content-Type: the download endpoint rejects a JSON one. The API calls set it in _rpc.
         return None
 
+    revoke_supported = True
+    signin_company = 'Dropbox'
+
+    def revoke_access(self):
+        # Disables the access token, the refresh token it came from, and every access token issued with it.
+        request = self.prepare_request('post', '/auth/token/revoke', {}, None, None, {'content-type': 'application/json'})
+        request.data = b'null'
+        request.request()
+
     def _rpc(self, path, args=None, request_params=None, access_tokens=None):
         # Dropbox's API calls are POSTs with a JSON body; calls without arguments take "null".
         request = self.prepare_request('post', path, Utils.default(args, {}), request_params, access_tokens, {'content-type': 'application/json'})
