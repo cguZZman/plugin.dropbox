@@ -54,6 +54,24 @@ class DropboxProviderTest(unittest.TestCase):
         self.assertEqual(json.loads(urllib.parse.parse_qs(urllib.parse.urlparse(url).query)['arg'][0]), {'path': 'id:m'})
         self.assertTrue(d.download_requires_auth)
 
+    def test_folders_are_listed_a_page_at_a_time(self):
+        d = FakeDropbox({
+            ('/files/list_folder', 'id:f'): {'entries': MOVIES[:2], 'cursor': 'c1', 'has_more': True},
+            ('/files/list_folder/continue', 'c1'): {'entries': MOVIES[2:], 'cursor': 'c2', 'has_more': False}})
+        items, next_page_token = d.get_folder_page(item_id='id:f', page_size=500)
+        self.assertEqual(([i['id'] for i in items], next_page_token), (['id:m', 'id:s'], 'c1'))
+        self.assertEqual(d.calls[0][1]['limit'], 500)
+        self.assertEqual(items[0]['parent'], 'id:f')
+        items, next_page_token = d.get_folder_page(item_id='id:f', page_size=500, page_token='c1')
+        self.assertEqual(([i['id'] for i in items], next_page_token), (['id:t', 'id:o'], None))
+
+    def test_folder_signature_sees_replaced_files(self):
+        def signature(*entries):
+            return FakeDropbox({('/files/list_folder', 'id:f'): {'entries': list(entries), 'cursor': 'c', 'has_more': False}}).folder_signature(item_id='id:f')
+        replaced = dict(MOVIES[0], server_modified='2026-10-31T00:00:00Z')
+        self.assertEqual(signature(*MOVIES), signature(*reversed(MOVIES)))
+        self.assertNotEqual(signature(*MOVIES), signature(replaced, *MOVIES[1:]))
+
     def test_subtitles_are_named_after_the_video(self):
         d = FakeDropbox({('/files/list_folder', '/movies'): {'entries': MOVIES, 'cursor': 'c', 'has_more': False}})
         self.assertEqual([s['name'] for s in d.get_subtitles('/movies', 'Movie.mkv')], ['Movie.en.srt', 'Movie.srt'])

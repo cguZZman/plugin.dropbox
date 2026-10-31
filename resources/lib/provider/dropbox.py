@@ -27,6 +27,7 @@ from clouddrive.common.utils import Utils
 
 
 class Dropbox(Provider):
+    folder_paging_supported = True
     _CONTENT_URL = 'https://content.dropboxapi.com/2'
     _SUBTITLE_EXTENSIONS = ('srt', 'idx', 'sub', 'sbv', 'ass', 'ssa', 'smi', 'vtt')
     # Search results are paged; stop after this many pages.
@@ -98,14 +99,7 @@ class Dropbox(Provider):
         items = []
         response = self._rpc('/files/list_folder', {'path': api_path, 'limit': 2000})
         while response:
-            page = []
-            for entry in Utils.get_safe_value(response, 'entries', []):
-                if Utils.get_safe_value(entry, '.tag') not in ('file', 'folder'):
-                    continue
-                item = self._extract_item(entry, include_download_info, parent)
-                if on_before_add_item:
-                    on_before_add_item(item)
-                page.append(item)
+            page = self._page_items(response, parent, include_download_info, on_before_add_item)
             if self.cancel_operation():
                 return
             if on_items_page_completed:
@@ -113,6 +107,30 @@ class Dropbox(Provider):
             items.extend(page)
             response = self._rpc('/files/list_folder/continue', {'cursor': response['cursor']}) if Utils.get_safe_value(response, 'has_more') else None
         return items
+
+    def _page_items(self, response, parent=None, include_download_info=False, on_before_add_item=None):
+        page = []
+        for entry in Utils.get_safe_value(response, 'entries', []):
+            if Utils.get_safe_value(entry, '.tag') not in ('file', 'folder'):
+                continue
+            item = self._extract_item(entry, include_download_info, parent)
+            if on_before_add_item:
+                on_before_add_item(item)
+            page.append(item)
+        return page
+
+    def get_folder_page(self, item_driveid=None, item_id=None, path=None, page_size=500, page_token=None, on_items_page_completed=None):
+        # Dropbox can't sort a listing: pages come in its order, each one sorted by Kodi.
+        if page_token:
+            response = self._rpc('/files/list_folder/continue', {'cursor': page_token})
+        else:
+            response = self._rpc('/files/list_folder', {'path': self._api_path(item_id, path), 'limit': page_size})
+        page = self._page_items(response, item_id)
+        if self.cancel_operation():
+            return
+        if on_items_page_completed:
+            on_items_page_completed(page)
+        return page, response['cursor'] if Utils.get_safe_value(response, 'has_more') else None
 
     def _extract_item(self, entry, include_download_info=False, parent=None):
         name = Utils.get_safe_value(entry, 'name', '')
