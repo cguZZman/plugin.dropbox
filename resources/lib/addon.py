@@ -33,7 +33,7 @@ class DropboxAddon(CloudDriveAddon):
         return self._provider
 
     def get_custom_drive_folders(self, driveid):
-        return []
+        return [{'name': self._common_addon.getLocalizedString(32058), 'path': Dropbox.SHARED_WITH_ME}]
 
 
 if __name__ == '__main__':

@@ -27,7 +27,12 @@ class FakeDropbox(Dropbox):
 
     def _rpc(self, path, args=None, request_params=None, access_tokens=None):
         self.calls.append((path, args))
-        key = args.get('path', args.get('cursor', args.get('query'))) if args else None
+        if args and 'shared_link' in args:
+            key = (args['shared_link']['url'], args['path'])
+        elif args and 'url' in args:
+            key = (args['url'], args.get('path'))
+        else:
+            key = args.get('path', args.get('cursor', args.get('query'))) if args else None
         return self.responses[(path, key)]
 
     def cancel_operation(self):
@@ -96,6 +101,69 @@ class DropboxProviderTest(unittest.TestCase):
             data, headers = d._rpc('/files/list_folder', {'path': ''})
             self.assertEqual(json.loads(data), {'path': ''})
             self.assertEqual(headers['content-type'], 'application/json')
+
+
+LINK = 'https://www.dropbox.com/scl/fo/abc'
+
+
+def arg(url):
+    return json.loads(urllib.parse.parse_qs(urllib.parse.urlparse(url).query)['arg'][0])
+
+
+class SharedWithMeTest(unittest.TestCase):
+    SHARED = {
+        ('/sharing/list_folders', None): {'entries': [
+            {'name': 'Mine', 'shared_folder_id': '1', 'access_type': {'.tag': 'owner'}, 'path_lower': '/mine', 'preview_url': 'https://x/1'},
+            {'name': 'Holidays', 'shared_folder_id': '2', 'access_type': {'.tag': 'viewer'}, 'path_lower': '/holidays', 'preview_url': 'https://x/2'},
+            {'name': 'Series', 'shared_folder_id': '3', 'access_type': {'.tag': 'viewer'}, 'preview_url': LINK, 'time_invited': '2026-10-01T10:00:00Z'}],
+            'cursor': 'f1'},
+        ('/sharing/list_folders/continue', 'f1'): {'entries': []},
+        ('/sharing/list_received_files', None): {'entries': [
+            {'name': 'Added.mkv', 'id': 'id:added', 'path_lower': '/added.mkv', 'preview_url': 'https://x/3'},
+            {'name': 'Movie.mkv', 'id': 'id:movie', 'preview_url': 'https://www.dropbox.com/scl/fi/def'}]}}
+
+    def shared(self):
+        d = FakeDropbox(dict(self.SHARED))
+        return d, {i['name']: i for i in d.get_folder_items(path='sharedWithMe', include_download_info=True)}
+
+    def test_lists_what_others_share(self):
+        d, items = self.shared()
+        self.assertEqual(sorted(items), ['Added.mkv', 'Holidays', 'Movie.mkv', 'Series'], 'not what the user shares')
+        self.assertEqual(items['Holidays']['id'], '/holidays', 'added to the Dropbox: by its path')
+        self.assertEqual(arg(items['Added.mkv']['download_info']['url']), {'path': 'id:added'})
+        self.assertIn('folder', items['Series'])
+        self.assertEqual(d.get_folder_page(path='sharedWithMe')[1], None, 'not paged')
+
+    def test_the_rest_through_their_shared_link(self):
+        d, items = self.shared()
+        url = items['Movie.mkv']['download_info']['url']
+        self.assertTrue(url.startswith('https://content.dropboxapi.com/2/sharing/get_shared_link_file?'))
+        self.assertEqual(arg(url), {'url': 'https://www.dropbox.com/scl/fi/def'})
+        self.assertNotIn('/', items['Series']['id'], 'ids go in download URL paths')
+        d.responses[('/files/list_folder', (LINK, ''))] = {'entries': [entry('id:s', 'Season 1', None, 'folder')], 'cursor': 'c', 'has_more': False}
+        d.responses[('/files/list_folder', (LINK, '/Season 1'))] = {'entries': MOVIES[:2], 'cursor': 'c', 'has_more': False}
+        [season] = d.get_folder_items(item_id=items['Series']['id'])
+        episodes = d.get_folder_items(item_id=season['id'], include_download_info=True)
+        self.assertEqual(arg(episodes[0]['download_info']['url']), {'url': LINK, 'path': '/Season 1/Movie.mkv'})
+        self.assertEqual(episodes[0]['parent'], season['id'])
+        self.assertIsNone(d.list_subtree(None, season['id']), 'exports list links folder by folder')
+
+    def test_link_items_play_with_subtitles(self):
+        d, items = self.shared()
+        season = Dropbox._link_id(LINK, '/Season 1')
+        movie = Dropbox._link_id(LINK, '/Season 1/Movie.mkv')
+        d.responses[('/sharing/get_shared_link_metadata', (LINK, '/Season 1/Movie.mkv'))] = dict(MOVIES[0], id='id:m')
+        d.responses[('/files/list_folder', (LINK, '/Season 1'))] = {'entries': MOVIES, 'cursor': 'c', 'has_more': False}
+        item = d.get_item(item_id=movie, find_subtitles=True, include_download_info=True)
+        self.assertEqual((item['id'], item['parent']), (movie, season))
+        self.assertEqual([s['name'] for s in item['subtitles']], ['Movie.en.srt', 'Movie.srt'])
+        self.assertEqual(arg(item['subtitles'][0]['download_info']['url']), {'url': LINK, 'path': '/Season 1/Movie.en.srt'})
+
+    def test_search_inside_a_link_walks_its_folders(self):
+        d, items = self.shared()
+        d.responses[('/files/list_folder', (LINK, ''))] = {'entries': [entry('id:s', 'Season 1', None, 'folder')], 'cursor': 'c', 'has_more': False}
+        d.responses[('/files/list_folder', (LINK, '/Season 1'))] = {'entries': MOVIES, 'cursor': 'c', 'has_more': False}
+        self.assertEqual([i['name'] for i in d.search('movie2', item_id=items['Series']['id'])], ['Movie2.srt'])
 
 
 if __name__ == '__main__':
