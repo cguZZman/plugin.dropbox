@@ -4,6 +4,7 @@ Browse your Dropbox in Kodi and play your videos, music and pictures.
 
 - Any number of Dropbox accounts
 - Search your Dropbox
+- Shared with me: folders and files others share with you, even those you haven't added to your Dropbox
 - Subtitles stored next to your videos are loaded automatically (same name, e.g. `movie.mkv` and `movie.srt` or `movie.en.srt`)
 - Export videos and music to the Kodi library (.strm files)
 - Use Dropbox as a source
