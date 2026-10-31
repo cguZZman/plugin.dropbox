@@ -95,3 +95,7 @@ msgstr ""
 msgctxt "#32010"
 msgid "Recursive auto-refreshed slideshow"
 msgstr ""
+
+msgctxt "#32071"
+msgid "Show the plot, cast and artwork from .nfo files and pictures next to the videos"
+msgstr ""

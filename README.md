@@ -6,6 +6,7 @@ Browse your Dropbox in Kodi and play your videos, music and pictures.
 - Search your Dropbox
 - Shared with me: folders and files others share with you, even those you haven't added to your Dropbox
 - Subtitles stored next to your videos are loaded automatically (same name, e.g. `movie.mkv` and `movie.srt` or `movie.en.srt`)
+- The plot, cast and artwork of Kodi .nfo files and pictures stored next to your videos (`movie.nfo`, `movie-poster.jpg`, `fanart.jpg`) are shown while browsing
 - Export videos and music to the Kodi library (.strm files)
 - Use Dropbox as a source
 - Read-only: the add-on never changes or deletes your files

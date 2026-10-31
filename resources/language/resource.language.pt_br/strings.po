@@ -95,3 +95,7 @@ msgstr "Tempo de atualização em minutos"
 msgctxt "#32010"
 msgid "Recursive auto-refreshed slideshow"
 msgstr "Slideshow atualizado automaticamente de forma recursiva"
+
+msgctxt "#32071"
+msgid "Show the plot, cast and artwork from .nfo files and pictures next to the videos"
+msgstr "Mostrar a sinopse, o elenco e as imagens dos arquivos .nfo e das imagens ao lado dos vídeos"
